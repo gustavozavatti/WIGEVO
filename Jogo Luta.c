@@ -10,26 +10,26 @@ struct personagem
     int defPersonagem;
 };
 
-void criacaoPersonagem(struct personagem *p)
+void criacaoPersonagem(struct personagem *personagem)
 {
     printf("Digite o nome do lutador: ");
-    scanf("%s", p->nomePersonagem);
+    scanf("%s", personagem->nomePersonagem);
 
     do
     {
         printf("Digite a vida(Numero terminado em 0): ");
-        scanf("%d", &p->lifePersonagem);
-    } while (p->lifePersonagem % 10 != 0);
+        scanf("%d", &personagem->lifePersonagem);
+    } while (personagem->lifePersonagem % 10 != 0);
 
     printf("Digite o ataque: ");
-    scanf("%d", &p->atkPersonagem);
+    scanf("%d", &personagem->atkPersonagem);
     printf("Digite a defesa: ");
-    scanf("%d", &p->defPersonagem);
+    scanf("%d", &personagem->defPersonagem);
 }
 
-int damageCalculator(struct personagem *p1, struct personagem *p2)
+int damageCalculator(struct personagem *personagem1, struct personagem *personagem2)
 {
-    int dano = p1->atkPersonagem - p2->defPersonagem;
+    int dano = personagem1->atkPersonagem - personagem2->defPersonagem;
     if (dano < 0)
     {
         dano = 0;
@@ -39,9 +39,14 @@ int damageCalculator(struct personagem *p1, struct personagem *p2)
 
 void regeneracaoVida(int atual, int vidaOriginal)
 {
-    if (atual != vidaOriginal)
+    if (atual < vidaOriginal)
     {
         atual += 10;
+
+        if (atual > vidaOriginal)
+        {
+            atual = vidaOriginal;
+        }
 
         printf("Curando... Vida atual: %d\n", atual);
         regeneracaoVida(atual, vidaOriginal);
@@ -66,6 +71,81 @@ int buscaPersonagemPronto(struct personagem lista[], int tamanho, int escolha, s
         }
     }
     return 1;
+}
+
+void StatusAtual(struct personagem *personagem1, struct personagem *personagem2)
+{
+    printf("\n===== STATUS ATUAL =====\n");
+    printf("%s -> Vida: %d\n", personagem1->nomePersonagem, personagem1->lifePersonagem);
+    printf("%s -> Vida: %d\n", personagem2->nomePersonagem, personagem2->lifePersonagem);
+}
+
+void menuAcoes(struct personagem *personagem1, int flagRegeneracao1, int jogador)
+{
+    printf("\nJogador %d: \n", jogador);
+    printf("\nDigite 1 para atacar!\n");
+    printf("Digite 2 para curar!\n");
+    printf("Digite 3 para aumentar o ataque!\n");
+    if (personagem1->lifePersonagem <= 20 && flagRegeneracao1 == 0)
+    {
+        printf("Digite 4 para recarga de vida especial!\n");
+    }
+}
+
+void acoesLuta(struct personagem *personagem1, struct personagem *personagem2, int acaoLuta, int *flagRegeneracao1)
+{
+    switch (acaoLuta)
+    {
+    case 1:
+        personagem2->lifePersonagem -= damageCalculator(personagem1, personagem2);
+        break;
+    case 2:
+        personagem1->lifePersonagem += 10;
+        break;
+    case 3:
+        personagem1->atkPersonagem += 10;
+        break;
+    case 4:
+        if (personagem1->lifePersonagem <= 20 && *flagRegeneracao1 == 0)
+        {
+            regeneracaoVida(personagem1->lifePersonagem, personagem1->lifePersonagem);
+            *flagRegeneracao1 = 1;
+        }
+        else
+        {
+            printf("Recarga especial nao disponivel!\n");
+        }
+        break;
+    default:
+        printf("Acao invalida!\n");
+        break;
+    }
+}
+
+int verificacaoGanhador(struct personagem *personagem1, struct personagem *personagem2)
+{
+    if (personagem1->lifePersonagem <= 0)
+    {
+        printf("\n%s ganhou!", personagem2->nomePersonagem);
+        return 1;
+    }
+    else if (personagem2->lifePersonagem <= 0)
+    {
+        printf("\n%s ganhou!", personagem1->nomePersonagem);
+        return 2;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void verificacaoVida(struct personagem *personagem)
+{
+    if (personagem->lifePersonagem < 0)
+    {
+        personagem->lifePersonagem = 0;
+    }
 }
 
 int main()
@@ -94,10 +174,16 @@ int main()
         return 0;
     default:
         printf("Opcao invalida!\n");
-        break;
+        return 0;
     }
 
     struct personagem *personagensBatalha = (struct personagem *)malloc(2 * sizeof(struct personagem));
+
+    if (personagensBatalha == NULL)
+    {
+        printf("Erro ao alocar memoria!\n");
+        return 1;
+    }
 
     struct personagem prontos[3];
     strcpy(prontos[0].nomePersonagem, "Ragnar");
@@ -163,120 +249,26 @@ int main()
 
     do
     {
-        printf("\n===== STATUS ATUAL =====\n");
-        printf("%s -> Vida: %d\n", personagensBatalha[0].nomePersonagem, personagensBatalha[0].lifePersonagem);
-        printf("%s -> Vida: %d\n", personagensBatalha[1].nomePersonagem, personagensBatalha[1].lifePersonagem);
-
-        printf("\nJogador 1: \n");
-        printf("Digite 1 para atacar!\n");
-        printf("Digite 2 para curar!\n");
-        printf("Digite 3 para aumentar o ataque!\n");
-        if (personagensBatalha[0].lifePersonagem <= 20 && flagRegeneracao1 == 0)
-        {
-            printf("Digite 4 para recarga de vida especial!\n");
-        }
+        StatusAtual(&personagensBatalha[0], &personagensBatalha[1]);
+        menuAcoes(&personagensBatalha[0], flagRegeneracao1, 1);
         scanf("%d", &acaoLuta);
-        switch (acaoLuta)
-        {
-        case 1:
-            personagensBatalha[1].lifePersonagem -= damageCalculator(&personagensBatalha[0], &personagensBatalha[1]);
-            break;
-        case 2:
-            personagensBatalha[0].lifePersonagem += 10;
-            if (personagensBatalha[0].lifePersonagem > guardaVidaP1)
-            {
-                personagensBatalha[0].lifePersonagem = guardaVidaP1;
-                printf("Limite de vida atingido!\n");
-            }
-            break;
-        case 3:
-            personagensBatalha[0].atkPersonagem += 10;
-            break;
-        case 4:
-            if (personagensBatalha[0].lifePersonagem <= 20 && flagRegeneracao1 == 0)
-            {
-                regeneracaoVida(personagensBatalha[0].lifePersonagem, guardaVidaP1);
-                personagensBatalha[0].lifePersonagem = guardaVidaP1;
-                flagRegeneracao1++;
-            }
-            else
-            {
-                printf("Recarga especial não disponivel!\n");
-            }
-            break;
-        default:
-            printf("Acao invalida!\n");
-             break;
-        }
 
-        printf("\n===== STATUS ATUAL =====\n");
-        printf("%s -> Vida: %d\n", personagensBatalha[0].nomePersonagem, personagensBatalha[0].lifePersonagem);
-        printf("%s -> Vida: %d\n", personagensBatalha[1].nomePersonagem, personagensBatalha[1].lifePersonagem);
+        acoesLuta(&personagensBatalha[0], &personagensBatalha[1], acaoLuta, &flagRegeneracao1);
 
-        if (personagensBatalha[1].lifePersonagem <= 0)
-        {
-            personagensBatalha[1].lifePersonagem = 0;
-            break;
-        }
+        StatusAtual(&personagensBatalha[0], &personagensBatalha[1]);
 
-        printf("\nJogador 2: \n");
-        printf("Digite 1 para atacar!\n");
-        printf("Digite 2 para curar!\n");
-        printf("Digite 3 para aumentar o ataque!\n");
-        if (personagensBatalha[1].lifePersonagem <= 20 && flagRegeneracao2 == 0)
-        {
-            printf("Digite 4 para recarga de vida especial!\n");
-        }
+        verificacaoVida(&personagensBatalha[1]);
+
+        menuAcoes(&personagensBatalha[1], flagRegeneracao2, 2);
         scanf("%d", &acaoLuta);
-        switch (acaoLuta)
-        {
-        case 1:
-            personagensBatalha[0].lifePersonagem -= damageCalculator(&personagensBatalha[1], &personagensBatalha[0]);
-            break;
-        case 2:
-            personagensBatalha[1].lifePersonagem += 10;
-            if (personagensBatalha[1].lifePersonagem > guardaVidaP2)
-            {
-                personagensBatalha[1].lifePersonagem = guardaVidaP2;
-                printf("Limite de vida atingido!\n");
-            }
-            break;
-        case 3:
-            personagensBatalha[1].atkPersonagem += 10;
-            break;
-        case 4:
-            if (personagensBatalha[1].lifePersonagem <= 20 && flagRegeneracao2 == 0)
-            {
-                regeneracaoVida(personagensBatalha[1].lifePersonagem, guardaVidaP2);
-                personagensBatalha[1].lifePersonagem = guardaVidaP2;
-                flagRegeneracao2++;
-            }
-            else
-            {
-                printf("Recarga especial nao disponivel!\n");
-            }
-            break;
-        default:
-            printf("Acao invalida!\n");
-            break;
-        }
 
-        if (personagensBatalha[0].lifePersonagem <= 0)
-        {
-            personagensBatalha[0].lifePersonagem = 0;
-            break;
-        }
+        acoesLuta(&personagensBatalha[1], &personagensBatalha[0], acaoLuta, &flagRegeneracao2);
+
+        verificacaoVida(&personagensBatalha[0]);
 
     } while (personagensBatalha[0].lifePersonagem > 0 && personagensBatalha[1].lifePersonagem > 0);
 
-    if (personagensBatalha[0].lifePersonagem <= 0)
-    {
-        printf("\n%s ganhou!", personagensBatalha[1].nomePersonagem);
-    }
-    else
-    {
-        printf("\n%s ganhou!", personagensBatalha[0].nomePersonagem);
-    }
+    verificacaoGanhador(&personagensBatalha[0], &personagensBatalha[1]);
 
     free(personagensBatalha);
 
